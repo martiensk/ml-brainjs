@@ -1,0 +1,27 @@
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+html, body {
+    background: #e7eef3;
+    font-family: 'Open Sans', 'Courier New', 'Courier', monospace;
+    font-size: 16px;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+    width: 100%;
+}
+
+body {
+    display: block;
+    text-align: center;
+
+    &::before {
+        content: '';
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+    }
+}
