@@ -4,34 +4,55 @@
         <i>Post a tweet below and I will tell you who said it.</i>
         <textarea v-model="tweet"></textarea>
         <button @click="assess">Let's see</button>
-        <span>Trump: {{trump}}</span> - OR - <span>Obama: {{obama}}</span>
+        <pop-up v-if="popped" :trump="trump" :obama="obama" :result="result" @train="train"></pop-up>
     </section>
 </template>
 
 <script>
+import PopUp from './popup';
+
 export default {
     name: 'Main',
+    components: {PopUp},
     data () {
         return {
             tweet: '',
-            trump: '',
-            obama: ''
+            lasttweet: '',
+            trump: 0,
+            obama: 0,
+            result: '',
+            popped: false
         };
     },
     methods: {
         assess () {
+            this.lasttweet = this.tweet;
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/assess');
             xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 
-            xhr.onreadystatechange = function () {
+            xhr.onreadystatechange = () => {
                 if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                     const result = JSON.parse(xhr.response);
-                    this.trump = result.trump;
-                    this.obama = result.obama;
+                    this.trump = Math.round(result.trump * 100);
+                    this.obama = Math.round(result.obama * 100);
+                    this.result = result.trump > result.obama ? 'trump' : 'obama';
+                    if (Math.abs(result.trump - result.obama) < 0.1) {
+                        this.result = 'neither';
+                    }
+                    this.popped = true;
                 }
             };
             xhr.send('tweet=' + this.tweet);
+        },
+        train (data) {
+            this.popped = false;
+            this.result = '';
+            this.tweet = '';
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/train');
+            xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+            xhr.send('tweet=' + this.lasttweet + '&who=' + data);
         }
     }
 };
@@ -72,14 +93,26 @@ export default {
         display: block;
         cursor: pointer;
         background-color: rgba(0, 0, 0, 0);
-        transition: background-color 0.4s;
+        box-shadow: 1px 2px 5px transparent;
+        min-width: 80px;
+        transition: background-color 0.4s, box-shadow 0.4s;
 
         &:hover {
             background-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 1px 2px 5px #000;
         }
     }
-    span {
-        display: block;
-        margin: 0 auto;
+    .result {
+        text-transform: capitalize;
+        animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+        0% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
     }
 </style>

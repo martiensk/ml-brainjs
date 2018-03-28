@@ -1,9 +1,5 @@
 module.exports = [
     {
-        input: 'test',
-        output: {trump: 1}
-    },
-    /*{
         input: 'Heading to Moon Township, Pennsylvania, to be with a really good person, State Representative Rick Saccone, who is running for Congress. Big & happy crowd (why not, some of the best economic numbers ever). Rick will help me a lot. Also, tough on crime & border. Loves 2nd A & VETS',
         output: {trump: 1}
     },
@@ -81,10 +77,6 @@ module.exports = [
     },
     {
         input: 'Obamacare has helped millions of Americans gain the peace of mind that comes with coverage. Show your support:',
-        output: {obama: 1}
-    }*/
-    {
-        input: 'not',
         output: {obama: 1}
     }
 ];

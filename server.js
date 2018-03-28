@@ -4,7 +4,7 @@ const express = require('express');
 const app = express();
 const {createBundleRenderer} = require('vue-server-renderer');
 const brain = require('brain.js');
-const data = require('./scripts/training');
+let data = require('./scripts/training');
 const bodyParser = require('body-parser');
 
 const html = fs.readFileSync('./dist/views/index.html', 'utf-8');
@@ -16,12 +16,24 @@ const renderer = createBundleRenderer(serverBundle, {
 });
 
 /* Brain stuff */
+const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+
 const encode = (arg) => {
-    return arg.split('').map((x) => { return (x.charCodeAt(0) / 255); });
+    const ret = [];
+    for (let i of arg) {
+        i = i.toLowerCase();
+        alphabet.indexOf(i) !== -1 && ret.push(i.charCodeAt(0) / 255);
+    }
+    return ret;
 };
 
 const net = new brain.NeuralNetwork();
 
+if (fs.existsSync('newdata.js')) {
+    data = JSON.parse(fs.readFileSync('newdata.js'));
+}
+
+// Map the data to ascii
 const dataset = data.map((d) => {
     return {
         input: encode(d.input),
@@ -29,7 +41,32 @@ const dataset = data.map((d) => {
     };
 });
 
-net.train(dataset);
+const fixLengths = (currentdata) => {
+    let maxLength = -1;
+
+    for (const i of currentdata) {
+        if (i.input.length > maxLength) {
+            maxLength = i.input.length;
+        }
+    }
+
+    for (const i in currentdata) {
+        while (currentdata[i].input.length < maxLength) {
+            currentdata[i].input.push(0);
+        }
+    }
+
+    return currentdata;
+}
+
+console.log(dataset);
+
+net.train(fixLengths(dataset), {
+    log: true,
+    logPeriod: 1000
+});
+
+console.warn('Done training, saving dataset...');
 
 /* Brain stuff done */
 
@@ -54,8 +91,23 @@ app.get('/', (req, res) => {
 
 app.post('/assess', (req, res) => {
     const result = net.run(encode(req.body.tweet));
-    console.log(result);
+    console.warn(result);
     res.end(JSON.stringify(result));
+});
+
+app.post('/train', (req, res) => {
+    data.push({
+        input: req.body.tweet,
+        output: req.body.who === 'trump' ? {trump: 1} : {obama: 1}
+    });
+    console.log(req.body.tweet);
+    console.log(req.body.who);
+    console.log(data);
+    res.end('trained');
+    fs.writeFile('newdata.js', JSON.stringify(data), (err) => {
+        if (err) { console.error(err); }
+        console.warn('The training data was saved!');
+    });
 });
 
 app.listen(8080);
